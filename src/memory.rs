@@ -9,4 +9,8 @@ impl RAM {
     pub fn new() -> RAM {
         RAM { mem: [0; RAM_SIZE as usize] }
     }
+
+    pub fn borrow_memory_range(&mut self, address: usize, range: usize) -> &mut [u8] {
+        &mut self.mem[address..address+range]
+    }
 }
