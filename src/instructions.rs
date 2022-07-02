@@ -15,6 +15,7 @@ impl fmt::Display for InstructionReadError {
     }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub enum Instruction {
     SYS    (u16),
@@ -68,7 +69,7 @@ impl Instruction {
             0x4 => Ok(Instruction::SNE_RV(((x & 0xF00) >> 8) as u8, (x & 0xFF) as u8)),
             0x5 => Ok(Instruction::SE_RR(((x & 0xF00) >> 8) as u8, ((x & 0xF0) >> 4) as u8)),
             0x6 => Ok(Instruction::LD_RV(((x & 0xF00) >> 8) as u8, (x & 0xFF) as u8)),
-            0x6 => Ok(Instruction::ADD_RV(((x & 0xF00) >> 8) as u8, (x & 0xFF) as u8)),
+            0x7 => Ok(Instruction::ADD_RV(((x & 0xF00) >> 8) as u8, (x & 0xFF) as u8)),
             0x8 => match x & 0xF {
                 0x0 => Ok(Instruction::LD_RR(((x & 0xF00) >> 8) as u8, ((x & 0xF0) >> 4) as u8)),
                 0x1 => Ok(Instruction::OR(((x & 0xF00) >> 8) as u8, ((x & 0xF0) >> 4) as u8)),

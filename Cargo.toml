@@ -9,8 +9,9 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "chip8-emulator"
-path = "src/bin/chip8.rs"
+path = "src/bin/emulator.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+byteorder = "1"

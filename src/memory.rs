@@ -1,12 +1,12 @@
-const RAM_INTPT_OFFSET: usize = 0x200;
-const RAM_SIZE: usize = 0x1000 - RAM_INTPT_OFFSET;
+pub const RAM_INTPT_OFFSET: u16 = 0x200;
+pub const RAM_SIZE: u16 = 0x1000 - RAM_INTPT_OFFSET;
 
 pub struct RAM {
-    mem: [u8; RAM_SIZE]
+    mem: [u8; RAM_SIZE as usize]
 }
 
 impl RAM {
     pub fn new() -> RAM {
-        RAM { mem: [0; RAM_SIZE] }
+        RAM { mem: [0; RAM_SIZE as usize] }
     }
 }
