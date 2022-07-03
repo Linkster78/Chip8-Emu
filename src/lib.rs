@@ -3,6 +3,7 @@ pub mod cpu;
 pub mod instructions;
 pub mod keyboard;
 pub mod display;
+pub mod cycles;
 
 use crate::memory::RAM;
 use crate::cpu::CPU;
@@ -34,7 +35,8 @@ impl Chip8 {
 
     pub fn step(&mut self) {
         let inst = self.ram.read_instruction(self.cpu.program_counter as usize)
-            .unwrap_or_else(|_| panic!("Memory contained invalid instruction at position {}", self.cpu.program_counter));
+            .unwrap_or_else(|_| panic!("Memory contained invalid instruction at position {:#06x}", self.cpu.program_counter));
+        println!("at {:#06x} {:?}", self.cpu.program_counter, inst);
         self.cpu.execute(&mut self.ram, &self.keyboard, &mut self.display, inst);
     }
 

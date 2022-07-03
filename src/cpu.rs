@@ -31,7 +31,7 @@ impl Default for CPU {
 }
 
 impl CPU {
-    pub fn execute(&mut self, ram: &mut RAM, keyboard: &Keyboard, display: &mut Display, instruction: Instruction) -> () {
+    pub fn execute(&mut self, ram: &mut RAM, keyboard: &Keyboard, display: &mut Display, instruction: Instruction) {
         self.program_counter += 2;
 
         match instruction {
@@ -61,12 +61,12 @@ impl CPU {
             }
             Instruction::SNE_RV(r, v) => {
                 if self.v_reg[r as usize] != v {
-                    self.program_counter += 1;
+                    self.program_counter += 2;
                 }
             }
             Instruction::SE_RR(r1, r2) => {
                 if self.v_reg[r1 as usize] == self.v_reg[r2 as usize] {
-                    self.program_counter += 1;
+                    self.program_counter += 2;
                 }
             }
             Instruction::LD_RV(r, v) => {
@@ -147,7 +147,7 @@ impl CPU {
                 if keyboard.last_pressed.is_some() {
                     self.v_reg[r as usize] = keyboard.last_pressed.unwrap();
                 } else {
-                    self.program_counter -= 1;
+                    self.program_counter -= 2;
                 }
             },
             Instruction::LD_DR(r) => {
@@ -172,6 +172,15 @@ impl CPU {
                 let memory = ram.borrow_memory_range(self.i_reg as usize, (tr + 1) as usize);
                 self.v_reg[..=tr as usize].copy_from_slice(&memory[..=tr as usize]);
             }
+        }
+    }
+
+    pub fn countdown_timers(&mut self) {
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+        }
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
         }
     }
 }

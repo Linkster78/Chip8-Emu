@@ -89,7 +89,7 @@ impl Instruction {
             0xD => Ok(Instruction::DRW(((x & 0xF00) >> 8) as u8, ((x & 0xF0) >> 4) as u8, (x & 0xF) as u8)),
             0xE => match x & 0xFF {
                 0x9E => Ok(Instruction::SKP(((x & 0xF00) >> 8) as u8)),
-                0xEA => Ok(Instruction::SKNP(((x & 0xF00) >> 8) as u8)),
+                0xA1 => Ok(Instruction::SKNP(((x & 0xF00) >> 8) as u8)),
                 _ => Err(InstructionReadError(x))
             },
             0xF => match x & 0xFF {

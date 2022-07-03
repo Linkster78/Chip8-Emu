@@ -6,6 +6,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use chip8::{Chip8, display, memory};
+use chip8::cycles::Coordinator;
 use chip8::keyboard::KeyEvent::{Pressed, Released};
 
 const SCREEN_WIDTH: u32 = 960;
@@ -58,63 +59,72 @@ fn main() {
     println!("Created the SDL2 window.");
 
     let mut canvas = window.into_canvas().build().unwrap();
+    let mut cpu_coordinator = Coordinator::new(CYCLES_PER_SECOND);
+    let mut timer_coordinator = Coordinator::new(60);
 
     'running: loop {
-        let mut key_events = Vec::new();
+        if cpu_coordinator.should_cycle() {
+            let mut key_events = Vec::new();
 
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running;
-                },
-                Event::KeyDown { keycode: Some(kc), .. } => {
-                    if KEYPAD_TABLE.contains(&kc) {
-                        let index = KEYPAD_TABLE.iter().position(|&s| s == kc);
-                        if let Some(index) = index {
-                            key_events.push(Pressed(index as u8));
+            for event in event_pump.poll_iter() {
+                match event {
+                    Event::Quit {..} |
+                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                        break 'running;
+                    },
+                    Event::KeyDown { keycode: Some(kc), .. } => {
+                        if KEYPAD_TABLE.contains(&kc) {
+                            let index = KEYPAD_TABLE.iter().position(|&s| s == kc);
+                            if let Some(index) = index {
+                                key_events.push(Pressed(index as u8));
+                            }
                         }
-                    }
-                },
-                Event::KeyUp { keycode: Some(kc), .. } => {
-                    if KEYPAD_TABLE.contains(&kc) {
-                        let index = KEYPAD_TABLE.iter().position(|&s| s == kc);
-                        if let Some(index) = index {
-                            key_events.push(Released(index as u8));
+                    },
+                    Event::KeyUp { keycode: Some(kc), .. } => {
+                        if KEYPAD_TABLE.contains(&kc) {
+                            let index = KEYPAD_TABLE.iter().position(|&s| s == kc);
+                            if let Some(index) = index {
+                                key_events.push(Released(index as u8));
+                            }
                         }
-                    }
-                },
-                _ => {}
-            }
-        }
-
-        system.keyboard.update_key_states(key_events);
-        system.step();
-
-        if system.display.dirty {
-            canvas.set_draw_color(COLOR_CLEAR);
-            canvas.clear();
-
-            let display_data = system.display.borrow_display();
-
-            canvas.set_draw_color(COLOR_CONTRAST);
-            let rect_width = SCREEN_WIDTH / display::DISPLAY_WIDTH as u32;
-            let rect_height = SCREEN_HEIGHT / display::DISPLAY_HEIGHT as u32;
-
-            let mut rects = Vec::new();
-            for x in 0..display::DISPLAY_WIDTH as i32 {
-                for y in 0..display::DISPLAY_HEIGHT as i32 {
-                    if display_data[x as usize][y as usize] {
-                        rects.push(Rect::new(x * rect_width as i32, y * rect_height as i32, rect_width, rect_height));
-                    }
+                    },
+                    _ => {}
                 }
             }
-            canvas.fill_rects(&rects[..]).ok();
-            canvas.present();
 
-            system.display.dirty = false;
+            system.keyboard.update_key_states(key_events);
+            system.step();
+
+            if system.display.dirty {
+                canvas.set_draw_color(COLOR_CLEAR);
+                canvas.clear();
+
+                let display_data = system.display.borrow_display();
+
+                canvas.set_draw_color(COLOR_CONTRAST);
+                let rect_width = SCREEN_WIDTH / display::DISPLAY_WIDTH as u32;
+                let rect_height = SCREEN_HEIGHT / display::DISPLAY_HEIGHT as u32;
+
+                let mut rects = Vec::new();
+                for x in 0..display::DISPLAY_WIDTH as i32 {
+                    for y in 0..display::DISPLAY_HEIGHT as i32 {
+                        if display_data[x as usize][y as usize] {
+                            rects.push(Rect::new(x * rect_width as i32, y * rect_height as i32, rect_width, rect_height));
+                        }
+                    }
+                }
+                canvas.fill_rects(&rects[..]).ok();
+                canvas.present();
+
+                system.display.dirty = false;
+            }
         }
 
-        thread::sleep(Duration::new(0, 1_000_000_000 / CYCLES_PER_SECOND));
+        if timer_coordinator.should_cycle() {
+            system.cpu.countdown_timers();
+        }
+
+        let coordinators = [&cpu_coordinator, &timer_coordinator];
+        thread::sleep(Duration::new(0, Coordinator::smallest_delay_until_cycle(&coordinators) as u32));
     }
 }
