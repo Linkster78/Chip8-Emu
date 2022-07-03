@@ -143,8 +143,13 @@ impl CPU {
             Instruction::LD_RD(r) => {
                 self.v_reg[r as usize] = self.delay_timer;
             }
-            Instruction::LD_RK(_)
-                => todo!("wait for key press"),
+            Instruction::LD_RK(r) => {
+                if keyboard.last_pressed.is_some() {
+                    self.v_reg[r as usize] = keyboard.last_pressed.unwrap();
+                } else {
+                    self.program_counter -= 1;
+                }
+            },
             Instruction::LD_DR(r) => {
                 self.delay_timer = self.v_reg[r as usize];
             }
@@ -161,15 +166,11 @@ impl CPU {
                 => todo!("bcd representation"),
             Instruction::LD_IRR(tr) => {
                 let memory = ram.borrow_memory_range_mut(self.i_reg as usize, (tr + 1) as usize);
-                for i in 0usize..=tr.into() {
-                    memory[i] = self.v_reg[i];
-                }
+                memory[..=tr as usize].copy_from_slice(&self.v_reg[..=tr as usize]);
             }
             Instruction::LD_RRI(tr) => {
                 let memory = ram.borrow_memory_range(self.i_reg as usize, (tr + 1) as usize);
-                for i in 0usize..=tr.into() {
-                    self.v_reg[i] = memory[i];
-                }
+                self.v_reg[..=tr as usize].copy_from_slice(&memory[..=tr as usize]);
             }
         }
     }

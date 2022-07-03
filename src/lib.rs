@@ -29,13 +29,12 @@ impl Default for Chip8 {
 
 impl Chip8 {
     pub fn execute(&mut self, instruction: Instruction) {
-        self.cpu.execute(&mut self.ram, &mut self.keyboard, &mut self.display, instruction)
+        self.cpu.execute(&mut self.ram, &self.keyboard, &mut self.display, instruction)
     }
 
     pub fn step(&mut self) {
         let inst = self.ram.read_instruction(self.cpu.program_counter as usize)
-            .expect(&format!("Memory contained invalid instruction at position {}", self.cpu.program_counter));
-        println!("-> {:?}", inst);
+            .unwrap_or_else(|_| panic!("Memory contained invalid instruction at position {}", self.cpu.program_counter));
         self.cpu.execute(&mut self.ram, &self.keyboard, &mut self.display, inst);
     }
 

@@ -1,21 +1,26 @@
-const DISPLAY_WIDTH: usize = 64;
-const DISPLAY_HEIGHT: usize = 32;
+pub const DISPLAY_WIDTH: usize = 64;
+pub const DISPLAY_HEIGHT: usize = 32;
 
 pub struct Display {
-    pixel_states: [[bool; DISPLAY_HEIGHT]; DISPLAY_WIDTH]
+    pixel_states: [[bool; DISPLAY_HEIGHT]; DISPLAY_WIDTH],
+    pub dirty: bool
 }
 
 impl Default for Display {
     fn default() -> Self {
-        Display { pixel_states: [[false; DISPLAY_HEIGHT]; DISPLAY_WIDTH] }
+        Display {
+            pixel_states: [[false; DISPLAY_HEIGHT]; DISPLAY_WIDTH],
+            dirty: false
+        }
     }
 }
 
 impl Display {
-    pub fn clear(&mut self) -> () {
+    pub fn clear(&mut self) {
         for pixel in self.pixel_states.iter_mut().flatten() {
             *pixel = false;
         }
+        self.dirty = true;
     }
 
     pub fn draw_sprite(&mut self, x: u8, y: u8, sprite_data: &[u8]) -> bool {
@@ -36,6 +41,7 @@ impl Display {
                 sprite_row >>= 1;
             }
         }
+        self.dirty = true;
         collision
     }
 
