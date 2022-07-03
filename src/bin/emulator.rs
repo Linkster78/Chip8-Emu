@@ -6,7 +6,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use chip8::{Chip8, display, memory};
-use chip8::cycles::Coordinator;
+use chip8::cpu::Coordinator;
 use chip8::keyboard::KeyEvent::{Pressed, Released};
 
 const SCREEN_WIDTH: u32 = 960;
@@ -64,6 +64,7 @@ fn main() {
 
     'running: loop {
         if cpu_coordinator.should_cycle() {
+            // pull keyboard events and pass them to the chip8 keyboard
             let mut key_events = Vec::new();
 
             for event in event_pump.poll_iter() {
@@ -91,10 +92,12 @@ fn main() {
                     _ => {}
                 }
             }
-
             system.keyboard.update_key_states(key_events);
+
+            // step the current instruction
             system.step();
 
+            // if a rendering instruction was called, re-render the screen
             if system.display.dirty {
                 canvas.set_draw_color(COLOR_CLEAR);
                 canvas.clear();
@@ -121,6 +124,7 @@ fn main() {
         }
 
         if timer_coordinator.should_cycle() {
+            // countdown the timers of the cpu
             system.cpu.countdown_timers();
         }
 

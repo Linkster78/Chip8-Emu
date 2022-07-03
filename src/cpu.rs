@@ -1,3 +1,5 @@
+use std::cmp::max;
+use std::time::SystemTime;
 use rand::Rng;
 use rand::rngs::ThreadRng;
 use crate::instructions::Instruction;
@@ -10,7 +12,6 @@ pub struct CPU {
     delay_timer: u8,
     sound_timer: u8,
     pub program_counter: u16,
-    stack_pointer: u8,
     stack: Vec<u16>,
     rng: ThreadRng
 }
@@ -23,7 +24,6 @@ impl Default for CPU {
             delay_timer: 0,
             sound_timer: 0,
             program_counter: 0,
-            stack_pointer: 0,
             stack: Vec::with_capacity(16),
             rng: rand::thread_rng()
         }
@@ -42,7 +42,6 @@ impl CPU {
             }
             Instruction::RET => {
                 self.program_counter = self.stack.pop().unwrap();
-                self.stack_pointer -= 1;
             }
             Instruction::JP(n) => {
                 let n = n;
@@ -50,7 +49,6 @@ impl CPU {
             }
             Instruction::CALL(n) => {
                 let n = n;
-                self.stack_pointer += 2;
                 self.stack.push(self.program_counter);
                 self.program_counter = n;
             }
@@ -162,8 +160,13 @@ impl CPU {
             Instruction::LD_RF(r) => {
                 self.i_reg = (self.v_reg[r as usize] as usize * memory::INTPT_SPRITE_LENGTH) as u16;
             },
-            Instruction::LD_BR(_)
-                => todo!("bcd representation"),
+            Instruction::LD_BR(r) => {
+                let val = self.v_reg[r as usize];
+                let memory = ram.borrow_memory_range_mut(self.i_reg as usize, 3);
+                memory[0] = val / 100;
+                memory[1] = val % 100 / 10;
+                memory[2] = val % 10;
+            },
             Instruction::LD_IRR(tr) => {
                 let memory = ram.borrow_memory_range_mut(self.i_reg as usize, (tr + 1) as usize);
                 memory[..=tr as usize].copy_from_slice(&self.v_reg[..=tr as usize]);
@@ -182,5 +185,47 @@ impl CPU {
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
+    }
+
+    pub fn is_tone_on(&self) -> bool {
+        self.sound_timer > 0
+    }
+}
+
+pub struct Coordinator {
+    pub rate: u32,
+    offset: u128,
+    last_execution: u128
+}
+
+impl Coordinator {
+    pub fn new(rate: u32) -> Self {
+        Coordinator {
+            rate,
+            offset: 1_000_000_000 / rate as u128,
+            last_execution: 0
+        }
+    }
+
+    pub fn should_cycle(&mut self) -> bool {
+        let duration_since_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+        let timestamp_nanos = duration_since_epoch.as_nanos();
+        if timestamp_nanos - self.last_execution >= self.offset {
+            self.last_execution = timestamp_nanos;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn delay_until_cycle(&self) -> u128 {
+        let duration_since_epoch = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+        let timestamp_nanos = duration_since_epoch.as_nanos();
+        max((self.last_execution + self.offset) as i128 - timestamp_nanos as i128, 0) as u128
+    }
+
+    pub fn smallest_delay_until_cycle(coordinators: &[&Coordinator]) -> u128 {
+        coordinators.iter().map(|coordinator| coordinator.delay_until_cycle())
+            .min().unwrap()
     }
 }
