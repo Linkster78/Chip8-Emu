@@ -87,7 +87,6 @@ fn main() {
         channels: Some(1),
         samples: None
     };
-
     let device = audio_subsystem.open_playback(None, &desired_spec, |spec| {
         SquareWave {
             phase_inc: 440.0 / spec.freq as f32,
@@ -95,6 +94,8 @@ fn main() {
             volume: 0.25
         }
     }).unwrap();
+    let mut is_playing_tone = false;
+    println!("Opened audio playback for tone generation.");
 
     let mut cpu_coordinator = Coordinator::new(CYCLES_PER_SECOND);
     let mut timer_coordinator = Coordinator::new(60);
@@ -159,11 +160,15 @@ fn main() {
                 system.display.dirty = false;
             }
 
+            // play a tone if the cpu's sound timer is positive
             if system.cpu.is_tone_on() {
-                device.resume();
-            } else {
+                if !is_playing_tone {
+                    device.resume();
+                }
+            } else if is_playing_tone {
                 device.pause();
             }
+            is_playing_tone = system.cpu.is_tone_on();
         }
 
         if timer_coordinator.should_cycle() {
