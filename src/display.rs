@@ -24,8 +24,11 @@ impl Display {
     }
 
     pub fn draw_sprite(&mut self, x: u8, y: u8, sprite_data: &[u8]) -> bool {
+        let x = x as i16;
+        let y = y as i16;
+
         let mut collision = false;
-        for py in y..y+sprite_data.len() as u8 {
+        for py in y..y+sprite_data.len() as i16 {
             let mut sprite_row = sprite_data[(py-y) as usize];
             for px in x..x+8 {
                 let px_wrapped = px as usize % DISPLAY_WIDTH;
