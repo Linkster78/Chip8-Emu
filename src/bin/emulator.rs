@@ -12,8 +12,8 @@ use chip8::keyboard::KeyEvent::{Pressed, Released};
 
 const SCREEN_WIDTH: u32 = 960;
 const SCREEN_HEIGHT: u32 = 480;
-const COLOR_CLEAR: Color = Color::RGB(34, 100, 180);
-const COLOR_CONTRAST: Color = Color::RGB(255, 130, 200);
+const COLOR_CLEAR: Color = Color::RGB(0, 0, 0);
+const COLOR_CONTRAST: Color = Color::RGB(255, 255, 255);
 
 const CYCLES_PER_SECOND: u32 = 500;
 
