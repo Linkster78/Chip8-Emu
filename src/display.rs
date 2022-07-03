@@ -31,14 +31,14 @@ impl Display {
                 let px_wrapped = px as usize % DISPLAY_WIDTH;
                 let py_wrapped = py as usize % DISPLAY_HEIGHT;
                 let display_pixel = &mut self.pixel_states[px_wrapped][py_wrapped];
-                let sprite_pixel = sprite_row & 0b1 == 1;
+                let sprite_pixel = sprite_row & 128 == 128;
 
                 if *display_pixel && sprite_pixel {
                     collision = true;
                 }
                 *display_pixel ^= sprite_pixel;
 
-                sprite_row >>= 1;
+                sprite_row <<= 1;
             }
         }
         self.dirty = true;
