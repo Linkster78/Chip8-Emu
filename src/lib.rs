@@ -17,27 +17,29 @@ pub struct Chip8 {
     pub display: Display
 }
 
-impl Chip8 {
-    pub fn new() -> Chip8 {
-        let cpu = CPU::new();
-        let ram = RAM::new();
-        let keyboard = Keyboard::new();
-        let display = Display::new();
+impl Default for Chip8 {
+    fn default() -> Self {
+        let cpu = CPU::default();
+        let ram = RAM::default();
+        let keyboard = Keyboard::default();
+        let display = Display::default();
         Chip8 { cpu, ram, keyboard, display }
     }
+}
 
-    pub fn execute(&mut self, instruction: Instruction) -> () {
+impl Chip8 {
+    pub fn execute(&mut self, instruction: Instruction) {
         self.cpu.execute(&mut self.ram, &mut self.keyboard, &mut self.display, instruction)
     }
 
-    pub fn step(&mut self) -> () {
+    pub fn step(&mut self) {
         let inst = self.ram.read_instruction(self.cpu.program_counter as usize)
             .expect(&format!("Memory contained invalid instruction at position {}", self.cpu.program_counter));
         println!("-> {:?}", inst);
         self.cpu.execute(&mut self.ram, &self.keyboard, &mut self.display, inst);
     }
 
-    pub fn load_program(&mut self, program_data: &[u8]) -> () {
+    pub fn load_program(&mut self, program_data: &[u8]) {
         let memory = &mut self.ram;
         let program_offset = memory.copy_program(program_data);
         self.cpu.program_counter = program_offset as u16;

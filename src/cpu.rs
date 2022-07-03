@@ -15,8 +15,8 @@ pub struct CPU {
     rng: ThreadRng
 }
 
-impl CPU {
-    pub fn new() -> CPU {
+impl Default for CPU {
+    fn default() -> Self {
         CPU {
             v_reg: [0; 16],
             i_reg: 0,
@@ -28,7 +28,9 @@ impl CPU {
             rng: rand::thread_rng()
         }
     }
+}
 
+impl CPU {
     pub fn execute(&mut self, ram: &mut RAM, keyboard: &Keyboard, display: &mut Display, instruction: Instruction) -> () {
         self.program_counter += 2;
 

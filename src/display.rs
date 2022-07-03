@@ -5,11 +5,13 @@ pub struct Display {
     pixel_states: [[bool; DISPLAY_HEIGHT]; DISPLAY_WIDTH]
 }
 
-impl Display {
-    pub fn new() -> Display {
+impl Default for Display {
+    fn default() -> Self {
         Display { pixel_states: [[false; DISPLAY_HEIGHT]; DISPLAY_WIDTH] }
     }
+}
 
+impl Display {
     pub fn clear(&mut self) -> () {
         for pixel in self.pixel_states.iter_mut().flatten() {
             *pixel = false;

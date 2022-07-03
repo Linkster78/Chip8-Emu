@@ -30,13 +30,15 @@ pub struct RAM {
     mem: [u8; RAM_SIZE]
 }
 
-impl RAM {
-    pub fn new() -> RAM {
+impl Default for RAM {
+    fn default() -> Self {
         let mut mem = [0; RAM_SIZE];
         mem[..INTPT_SPRITES.len()].copy_from_slice(&INTPT_SPRITES);
         RAM { mem }
     }
+}
 
+impl RAM {
     pub fn borrow_memory_range_mut(&mut self, address: usize, range: usize) -> &mut [u8] {
         &mut self.mem[address..address+range]
     }
