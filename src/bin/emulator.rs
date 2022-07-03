@@ -1,6 +1,7 @@
 use std::{env, fs, thread};
 use std::path::Path;
 use std::time::Duration;
+use sdl2::audio::{AudioCallback, AudioSpecDesired};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -11,8 +12,8 @@ use chip8::keyboard::KeyEvent::{Pressed, Released};
 
 const SCREEN_WIDTH: u32 = 960;
 const SCREEN_HEIGHT: u32 = 480;
-const COLOR_CLEAR: Color = Color::RGB(0, 0, 0);
-const COLOR_CONTRAST: Color = Color::RGB(255, 255, 255);
+const COLOR_CLEAR: Color = Color::RGB(34, 100, 180);
+const COLOR_CONTRAST: Color = Color::RGB(255, 130, 200);
 
 const CYCLES_PER_SECOND: u32 = 500;
 
@@ -22,6 +23,27 @@ const KEYPAD_TABLE: [Keycode; 16] = [
     Keycode::A,    Keycode::S,    Keycode::D,    Keycode::F,
     Keycode::Z,    Keycode::X,    Keycode::C,    Keycode::V,
 ];
+
+struct SquareWave {
+    phase_inc: f32,
+    phase: f32,
+    volume: f32
+}
+
+impl AudioCallback for SquareWave {
+    type Channel = f32;
+
+    fn callback(&mut self, out: &mut [f32]) {
+        for x in out.iter_mut() {
+            *x = if self.phase <= 0.5 {
+                self.volume
+            } else {
+                -self.volume
+            };
+            self.phase = (self.phase + self.phase_inc) % 1.0;
+        }
+    }
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -48,6 +70,7 @@ fn main() {
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
+    let audio_subsystem = sdl_context.audio().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
     println!("Initialized the SDL2 context and video subsystem.");
 
@@ -56,9 +79,23 @@ fn main() {
         .position_centered()
         .build()
         .unwrap();
+    let mut canvas = window.into_canvas().build().unwrap();
     println!("Created the SDL2 window.");
 
-    let mut canvas = window.into_canvas().build().unwrap();
+    let desired_spec = AudioSpecDesired {
+        freq: Some(44100),
+        channels: Some(1),
+        samples: None
+    };
+
+    let device = audio_subsystem.open_playback(None, &desired_spec, |spec| {
+        SquareWave {
+            phase_inc: 440.0 / spec.freq as f32,
+            phase: 0.0,
+            volume: 0.25
+        }
+    }).unwrap();
+
     let mut cpu_coordinator = Coordinator::new(CYCLES_PER_SECOND);
     let mut timer_coordinator = Coordinator::new(60);
 
@@ -120,6 +157,12 @@ fn main() {
                 canvas.present();
 
                 system.display.dirty = false;
+            }
+
+            if system.cpu.is_tone_on() {
+                device.resume();
+            } else {
+                device.pause();
             }
         }
 
